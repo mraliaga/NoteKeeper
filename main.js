@@ -1,4 +1,3 @@
-//! Ay dizisi
 const months = [
   "January",
   "February",
@@ -14,147 +13,220 @@ const months = [
   "December",
 ];
 
-//! Htmlden gelen elemanlar
-
+// ! Htmlden gelen elemanlar
 const addBox = document.querySelector(".add-box");
 const popupBoxContainer = document.querySelector(".popup-box");
 const popupBox = document.querySelector(".popup");
 const closeBtn = document.querySelector("header i");
 const form = document.querySelector("form");
 const wrapper = document.querySelector(".wrapper");
+const popupTitle = document.querySelector("header p");
+const submitBtn = document.querySelector("#submit-btn");
 
-//! Localstrogeden notlari al ve eger localde not yoksa bos dizi donder.
+// ! localstorageden noteları al ve eğer localde not yoksa boş bizi dönder
 let notes = JSON.parse(localStorage.getItem("notes")) || [];
 
-console.log(notes);
+// ! Güncelleme için gereken değişkenler
+let isUpdate = false;
+let updateId = null;
 
-//! Fonsiyonlar ve olay izleyicileri
-//AddBoxa tiklaninca 1 fonksiyon tetikle.
+// ! Fonksiyonlar ve olay izleyicileri
+
+// AddBoxa tıklanınca bir fonksiyon tetikle
 addBox.addEventListener("click", () => {
-  // Popupbox ve popupbox a 1 class ekle.
+  // PopupboxContainer ve popupbox'a bir class ekle
   popupBoxContainer.classList.add("show");
   popupBox.classList.add("show");
-  //Arkaplandaki sayfa kaydirilmasini engelle
+  // Arka plandaki sayfa kaydırılmasını engelle
   document.querySelector("body").style.overflow = "hidden";
 });
 
-// CloseBtne tiklayinca popupBox Container ve popupa eklenen klaslari kaldir.
-
+// CloseBtne tıklayınca popupBoxContainer ve popup'a eklenen classları kaldır
 closeBtn.addEventListener("click", () => {
   popupBoxContainer.classList.remove("show");
   popupBox.classList.remove("show");
-  //Arkaplandaki sayfa kaydirilmasini tekrardan aktifet
+  // Arka plandaki sayfa kaydırılmasını tekrardan aktif et
   document.querySelector("body").style.overflow = "auto";
 });
 
-//Menu kismini ayarlayan fonksiyon
+// Menu kısmını ayarlayan fonksiyon
 
 function showMenu(elem) {
-  //parent element bir elemanin kapsam elemanina erismek icin kullanilir.
-  console.log(elem.parentElement);
+  // parentElement bir elemanın kapsam elemanına erişmek için kullanılır
+
+  // Tıklanılan elemanın kapsamına eriştikten sonra buna bir class ekledik
+  elem.parentElement.classList.add("show");
+
+  // Tıklanılan yer menu kısmı haricindeyse show classını kaldır
+
+  document.addEventListener("click", (e) => {
+    // Tıklanılan kısım etiketi değilse yada kapsam dışarısındaysa show classını kaldır
+    if (e.target.tagName != "I" || e.target != elem) {
+      elem.parentElement.classList.remove("show");
+    }
+  });
 }
 
-//wrapper kismindaki tiklanmalari izle
+// Wrapper kısımındaki tıklanmaları izle
 wrapper.addEventListener("click", (e) => {
+  // Eğer üç noktaya tıklanıldıysa
   if (e.target.classList.contains("bx-dots-horizontal-rounded")) {
     showMenu(e.target);
   }
+  // Eğer sil ikonuna tıklandıldıysa
+  else if (e.target.classList.contains("deleteIcon")) {
+    const res = confirm("Bu notu silmek istediğinize eminmisiniz ?");
+    if (res) {
+      // Tıklanılan note elemanına eriş
+      const note = e.target.closest(".note");
+      // Notun idsine eriş
+      const noteId = note.dataset.id;
+      // Notes dizisini dön ve idsi noteIdye eşit olan elemanı diziden kaldır
+      notes = notes.filter((note) => note.id != noteId);
+
+      // localStorage'ı güncelle
+      localStorage.setItem("notes", JSON.stringify(notes));
+
+      // renderNotes fonksiyonunu çalıştır
+      renderNotes();
+    }
+  }
+
+  // Eğer güncelle ikonuna tıklanıldıysa
+  else if (e.target.classList.contains("updateIcon")) {
+    // Tıklanılan note elemanına eriş
+    const note = e.target.closest(".note");
+    // Note elemanının idsine eriş
+    const noteId = parseInt(note.dataset.id);
+    // Note dizisi içerisinde id'si bilinen elemanı bul
+    const foundedNote = notes.find((note) => note.id == noteId);
+
+    // Popup içerisindeki elemanlara note değerlerini ata
+    form[0].value = foundedNote.title;
+    form[1].value = foundedNote.description;
+
+    // Güncelleme modunu aktif et
+    isUpdate = true;
+    updateId = noteId;
+
+    // Popup'ı aç
+    popupBoxContainer.classList.add("show");
+    popupBox.classList.add("show");
+
+    // Popup içerisindeki gerekli alanları update e göre düzenle
+    popupTitle.textContent = "Update Note";
+    submitBtn.textContent = "Update";
+  }
 });
 
-// forma olay izleyicisi ekle ve form icerisindeki verilere eris
+// Form'a bir olay izleyisi ekle ve form içerisindeki verilere eriş
+form.addEventListener("submit", (e) => {
+  // Form gönderildiğinde sayfa yenilemesini engelle
+  e.preventDefault();
 
-form.addEventListener("submit", (event) => {
-  // Form gonderildiginde sayfa yenilemesine engelle
-  event.preventDefault();
+  // Form içerisindeki elemanlara eriş
+  let titleInput = e.target[0];
+  let descriptionInput = e.target[1];
 
-  // Form gonderildiginde form icerisindeki verilere eris
+  // Form elemanlarının içerisindeki değerlere eriş
+  let title = titleInput.value.trim();
+  let description = descriptionInput.value.trim();
 
-  //Form gonderildiginde verilere eris
-  let titleInput = event.target[0];
-  let descriptionInput = event.target[1];
-
-  // Form elemanlarinin icersindeki degerlere eris
-  let title = titleInput.value; //!Trim Calismadi
-  let description = descriptionInput.value; //!Trim Calismadi
-
-  //eger title ve desc degeri yoksa uyari ver
-
+  // Eğer title ve description değeri yoksa uyarı ver
   if (!title && !description) {
-    alert("Lutfen formdaki gerekli kisimlari doldurunuz!");
+    alert("Lütfen formdaki gerekli kısımları doldur!");
   }
-  // Eger title desc varsa gerekli bilgileri olustur
+  // Eğer title ve description değeri varsa gerekli bilgileri oluştur
   const date = new Date();
-
+  let id = new Date().getTime();
   let day = date.getDate();
   let year = date.getFullYear();
   let month = months[date.getMonth()];
 
-  // Elde edilen verileri 1 not objesi altinda topla .
+  // Eğer güncelleme modundaysa
+  if (isUpdate) {
+    // Güncelleme yapılacak elemanın dizi içerisindeki indexini bul
+    const noteIndex = notes.findIndex((note) => {
+      return note.id == updateId;
+    });
 
-  let noteInfo = {
-    title,
-    description,
-    date: `${month} ${day},${year}`,
-  };
+    // Dizi içerisinde yukarıda bulunan index'deki elemanın değerlerini güncelle
+    notes[noteIndex] = {
+      title,
+      description,
+      id,
+      date: `${month} ${day},${year}`,
+    };
+    // Güncelleme modunu kapat ve popup içerisindeki elemanları eskiye çevir
+    isUpdate = false;
+    updateId = null;
+    popupTitle.textContent = "New Note";
+    submitBtn.textContent = "Add Note";
+  } else {
+    // Elde edilen verileri bir note objesi altında topla
+    let noteInfo = {
+      title,
+      description,
+      date: `${month} ${day},${year}`,
+      id,
+    };
+    // noteInfo objesini notes dizisine ekle
+    notes.push(noteInfo);
+  }
 
-  // NoteInfo objesini notes dizisine ekle
-
-  notes.push(noteInfo);
-
-  // Notes dizisini localstorage a ekle
+  // notes dizisini localstorage a ekle
   localStorage.setItem("notes", JSON.stringify(notes));
 
-  // Popupi kapat
+  // Formu içerisindeki elemanları temizle
   titleInput.value = "";
   descriptionInput.value = "";
-  //Formu icersindeki elemanlari temizle
+  // Popup'ı kapat
   popupBoxContainer.classList.remove("show");
   popupBox.classList.remove("show");
-
-  // Arkaplandaki sayfa kaydirilmasini tekrardan aktifet
+  // Arka plandaki sayfa kaydırılmasını tekrardan aktif et
   document.querySelector("body").style.overflow = "auto";
 
-  //Note eklendikten sonra notes render et
+  // Not eklendikten sonra notları render et
+
   renderNotes();
 });
 
-// ! Localstrogedeki verilere gore tekrardan note cartlari render ene fonksiyon
+// ! Localstorage'daki verilere göre ekrana note kartları render eden fonksiyon
 
 function renderNotes() {
-  // Eger not localstoragede yoksa fonk durdur
-
+  // Eğer localstorage not verisi yoksa fonksiyonu durdur
   if (!notes) return;
 
-  // Once mevcut notlari kaldir
-
+  // Önce  mevcut noteları kaldır
   document.querySelectorAll(".note").forEach((li) => li.remove());
 
-  // note dizisindeki her bir eleman icin bir note karti render et
+  // Note dizisindeki herbir eleman için ekrana bir note kartı render et
 
   notes.forEach((note) => {
-    let liTag = ` <li class="note">
-   
-    <div class="details">
-      <p class="title">${note.title}</p>
-      <p class="description">${note.description}</p>
-    </div>
-    <div class="bottom-content">
-      <span>${note.date}</span>
-      <div class="settings show">
-        <i class="bx bx-dots-horizontal-rounded"></i>
-        <ul class="menu">
-          <li><i class="bx bx-edit"></i> Düzenle</li>
-          <li><i class="bx bx-trash"></i> Sil</li>
-        </ul>
-      </div>
-    </div>
-  </li>`;
-    // iah belirli ogeyi bir HTML elemanina gore sirali bir sekilde eklemek icin kullanilir.
-    //Bu method hangi konuma once vew sonrasinami ve hangi eleman bunu belirmesini ister
-
+    // data-idyi  elemanlara id vermek için kullandık
+    let liTag = `<li class="note" data-id='${note.id}'>
+        <div class="details">
+          <p class="title">${note.title}</p>
+          <p class="description">
+         ${note.description}
+          </p>
+        </div>
+     
+        <div class="bottom-content">
+          <span>${note.date}</span>
+          <div class="settings ">
+            <i class="bx bx-dots-horizontal-rounded"></i>
+            <ul class="menu">
+              <li class='updateIcon'><i class="bx bx-edit"></i> Düzenle</li>
+              <li class='deleteIcon'><i class="bx bx-trash"></i> Sil</li>
+            </ul>
+          </div>
+        </div>
+      </li>`;
+    //insertAdjacentHTML metodu belirli bir öğeyi bir Html elemanına göre sıralı şekilde eklemek için kullanılır.Bu metot hangi konuma ekleme yapılacak ve hangi eleman eklenecek bunu belirtmemizi ister
     addBox.insertAdjacentHTML("afterend", liTag);
   });
 }
 
-//Sayfa yanilendiginde renderNote() fonk calistir
+// Sayfa yüklendiğinde renderNotes fonksiyonunu çalıştır
 document.addEventListener("DOMContentLoaded", () => renderNotes());
